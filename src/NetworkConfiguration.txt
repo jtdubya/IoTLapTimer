@@ -1,6 +1,6 @@
 #pragma once
 
-// Replace with actual values
+// Replace with actual values and change file type to .h
 struct NetworkConfiguration
 {
 	char* ssid = "ssid";
