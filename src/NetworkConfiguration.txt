@@ -1,0 +1,9 @@
+#pragma once
+
+// Replace with actual values
+struct NetworkConfiguration
+{
+	char* ssid = "ssid";
+	char* key = "password";
+	char* apiPrefix = "http://<url>/RaceTimer";
+};
