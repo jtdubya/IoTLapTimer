@@ -13,11 +13,11 @@
 //
 // LED States:
 //
-// 1. Wifi Connect
+// 1. Initial Wifi Connection
 //		1.1 - Connected: LED off
 //		1.2 - Not Connected: 2 quick blinks
 //		1.3 - IP address changed: continuous quick blinks
-// 2. Registration
+// 2. After initial connection
 //      2.1 - Registered: LED off - Numeric displays all dashes
 //		2.2 - Not Registered: 1 quick blink, 1 long blink
 //		2.4 - HTTP error (could be caused by things like the server is not up or wrong url): 2 quick blinks, 1 long blink
@@ -37,7 +37,7 @@ void setup()
 {
     Serial.begin(9600);
     pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
-    turnLedOff();
+    TurnLedOff();
     _timerState = NOT_REGISTERED;
     WiFi.mode(WIFI_STA);
     _wifiMulti.addAP(_netConfig.ssid, _netConfig.key);
@@ -56,19 +56,19 @@ void loop()
 {
     if (_wifiMulti.run() == WL_CONNECTED)
     {
-        handleTimerState();
+        HandleTimerState();
     }
     else
     {
         Serial.println("NOT connected");
-        blinkLED(QUICK_BLINK_DURATION, 2);
+        BlinkLED(QUICK_BLINK_DURATION, 2);
         delay(LAP_COUNT_DISPLAY_DELAY_MS);
     }
 
     delay(LOOP_DELAY_MS);
 }
 
-void checkIPAddress()
+void CheckIPAddress()
 {
     IPAddress wifiIPAddress = WiFi.localIP();
 
@@ -87,28 +87,28 @@ void checkIPAddress()
         Serial.println(_ipAddress);
         Serial.println("New IP: ");
         Serial.println(wifiIPAddress);
-        blinkLED(QUICK_BLINK_DURATION, QUICK_BLINK_DURATION, INT_MAX);
+        BlinkLED(QUICK_BLINK_DURATION, QUICK_BLINK_DURATION, INT_MAX);
     }
 }
 
-void turnLedOn()
+void TurnLedOn()
 {
     digitalWrite(LED_BUILTIN, LOW);
     _ledOn = true;
 }
 
-void turnLedOff()
+void TurnLedOff()
 {
     digitalWrite(LED_BUILTIN, HIGH);
     _ledOn = false;
 }
 
-void blinkLED(int onDuration, int blinkCount)
+void BlinkLED(int onDuration, int blinkCount)
 {
-    blinkLED(onDuration, BLINK_INTERVAL, blinkCount);
+    BlinkLED(onDuration, BLINK_INTERVAL, blinkCount);
 }
 
-void blinkLED(int onDuration, int blinkInterval, int blinkCount)
+void BlinkLED(int onDuration, int blinkInterval, int blinkCount)
 {
     if (onDuration < 100)
     {
@@ -117,46 +117,50 @@ void blinkLED(int onDuration, int blinkInterval, int blinkCount)
 
     for (int i = 0; i < blinkCount; i++)
     {
-        turnLedOn();
+        TurnLedOn();
         delay(onDuration);
-        turnLedOff();
+        TurnLedOff();
         delay(blinkInterval);
     }
 }
 
-void handleTimerState()
+void HandleTimerState()
 {
     switch (_timerState)
     {
     case NOT_REGISTERED:
-        checkIPAddress();
-        registerTimer();
+        CheckIPAddress();
+        RegisterTimer();
         break;
     case REGISTERED:
-        waitForStartCountdown();
+        WaitForStartCountdown();
         break;
     case RACE_START_COUNTDOWN:
-        countdownToRaceStart();
+        CountdownToRaceStart();
         break;
     case RACE_IN_PROGRESS:
-        handleRace();
+        HandleRace();
+        break;
+    case RACE_FINISH:
+        GetRaceResult();
         break;
     default:
         Serial.println("Unhandled timer state: ");
         Serial.println(_timerState);
         delay(5000);
         break;
-        //RACE_FINISH
     }
 }
 
-GetResponse sendGetRequest(String resource)
+HttpResponse SendGetRequest(String resource)
 {
     String endpoint = (String)_netConfig.endpointBase + resource;
     WiFiClient wifiClient;
     HTTPClient httpClient;
-    GetResponse getResponse;
+    HttpResponse getResponse;
 
+    Serial.print("GET ");
+    Serial.println(endpoint);
     if (httpClient.begin(wifiClient, endpoint))
     {
         getResponse.httpCode = httpClient.GET();
@@ -174,8 +178,8 @@ GetResponse sendGetRequest(String resource)
         else
         {
             Serial.printf("HTTP GET failed, error: %s\n", httpClient.errorToString(getResponse.httpCode).c_str());
-            blinkLED(QUICK_BLINK_DURATION, 2);
-            blinkLED(LONG_BLINK_DURATION, 1);
+            BlinkLED(QUICK_BLINK_DURATION, 2);
+            BlinkLED(LONG_BLINK_DURATION, 1);
         }
 
         httpClient.end();
@@ -184,7 +188,7 @@ GetResponse sendGetRequest(String resource)
     return getResponse;
 }
 
-JsonResponse deserializeJsonResponse(String jsonBody)
+JsonResponse DeserializeJsonResponse(String jsonBody)
 {
     JsonResponse jsonResponse;
     DeserializationError deserializationError = deserializeJson(jsonResponse.document, jsonBody);
@@ -203,14 +207,14 @@ JsonResponse deserializeJsonResponse(String jsonBody)
     return jsonResponse;
 }
 
-void registerTimer()
+void RegisterTimer()
 {
     String registerEndpoint = "/Register/" + _ipAddress.toString();
-    GetResponse getResponse = sendGetRequest(registerEndpoint);
+    HttpResponse getResponse = SendGetRequest(registerEndpoint);
 
     if (getResponse.httpCode == HTTP_CODE_OK)
     {
-        JsonResponse jsonResponse = deserializeJsonResponse(getResponse.body);
+        JsonResponse jsonResponse = DeserializeJsonResponse(getResponse.body);
 
         if (jsonResponse.deserializationSuccess)
         {
@@ -249,20 +253,20 @@ void registerTimer()
             }
             else
             {
-                blinkLED(QUICK_BLINK_DURATION, 5);
-                blinkLED(LONG_BLINK_DURATION, 1);
+                BlinkLED(QUICK_BLINK_DURATION, 5);
+                BlinkLED(LONG_BLINK_DURATION, 1);
             }
         }
     }
 }
 
-void waitForStartCountdown()
+void WaitForStartCountdown()
 {
-    GetResponse response = sendGetRequest("/GetRaceState");
+    HttpResponse response = SendGetRequest("/GetRaceState");
 
     if (response.httpCode == HTTP_CODE_OK)
     {
-        JsonResponse jsonResponse = deserializeJsonResponse(response.body);
+        JsonResponse jsonResponse = DeserializeJsonResponse(response.body);
 
         if (jsonResponse.deserializationSuccess)
         {
@@ -276,20 +280,21 @@ void waitForStartCountdown()
     }
 }
 
-void countdownToRaceStart()
+void CountdownToRaceStart()
 {
     if (_millisecondsToRaceStartFromServer == -1) // haven't received countdown duration from server yet
     {
-        GetResponse response = sendGetRequest("/GetTimeUntilRaceStart");
+        HttpResponse response = SendGetRequest("/GetTimeUntilRaceStart");
 
         if (response.httpCode == HTTP_CODE_OK)
         {
             _countdownStart = std::chrono::high_resolution_clock::now();
-            JsonResponse jsonResponse = deserializeJsonResponse(response.body);
+            JsonResponse jsonResponse = DeserializeJsonResponse(response.body);
 
             if (jsonResponse.deserializationSuccess)
             {
                 _millisecondsToRaceStartFromServer = jsonResponse.document["millisecondsUntilStart"];
+                _numberOfLaps = jsonResponse.document["numberOfLaps"];
             }
         }
     }
@@ -313,6 +318,168 @@ void countdownToRaceStart()
         {
             int64_t millisUntilStart = _millisecondsToRaceStartFromServer - elapsedMilliseconds;
             DisplayTime(std::chrono::nanoseconds(millisUntilStart * ONE_MILLION));
+        }
+    }
+}
+
+void PostLapTimeToServer(std::chrono::nanoseconds lapTime)
+{
+    int64_t lapTimeMillis = std::chrono::duration_cast<std::chrono::milliseconds>(lapTime).count();
+
+    StaticJsonDocument<256> jsonDoc;
+    jsonDoc["ipAddress"] = _ipAddress.toString();
+    jsonDoc["lapTime"] = lapTimeMillis;
+    String jsonString;
+    serializeJson(jsonDoc, jsonString);
+    Serial.print("Lap time json: ");
+    Serial.println(jsonString);
+
+    String lapResultEndpoint = "/AddLapResultInMilliseconds";
+    String endpoint = (String)_netConfig.endpointBase + lapResultEndpoint;
+    WiFiClient wifiClient;
+    HTTPClient httpClient;
+    HttpResponse httpResponse;
+
+    if (httpClient.begin(wifiClient, endpoint))
+    {
+        httpClient.addHeader("Content-Type", "application/json");
+        httpResponse.httpCode = httpClient.POST(jsonString);
+
+        if (httpResponse.httpCode > 0)
+        { /// HTTP client errors are negative
+            Serial.printf("HTTP POST success, code: %d\n", httpResponse.httpCode);
+            httpResponse.body = httpClient.getString();
+            auto size = sizeof(httpResponse.body);
+            Serial.print("response Body size: ");
+            Serial.println(size * 8);
+            Serial.print("response Body: ");
+            Serial.println(httpResponse.body);
+        }
+        else
+        {
+            Serial.printf("HTTP POST failed, error: %s\n", httpClient.errorToString(httpResponse.httpCode).c_str());
+            BlinkLED(QUICK_BLINK_DURATION, 2);
+            BlinkLED(LONG_BLINK_DURATION, 1);
+        }
+
+        httpClient.end();
+    }
+}
+
+void GetRaceResult()
+{
+    HttpResponse response = SendGetRequest("/GetLastRaceResultById/" + String(_id));
+
+    if (response.httpCode == HTTP_CODE_OK)
+    {
+        JsonResponse jsonResponse = DeserializeJsonResponse(response.body);
+
+        if (jsonResponse.deserializationSuccess)
+        {
+            String message = jsonResponse.document["responseMessage"];
+
+            if (message.equals("success"))
+            {
+                int place = jsonResponse.document["place"];
+                int64_t overallTimeMilliseconds = jsonResponse.document["overallTimeMilliseconds"];
+                int64_t fastestLapMilliseconds = jsonResponse.document["fastestLapMilliseconds"];
+                int fastestLapNumber = jsonResponse.document["fastestLapNumber"];
+
+                Serial.print("overall: ");
+                Serial.println((double)overallTimeMilliseconds);
+                Serial.print("fastestLap: ");
+                Serial.println((double)fastestLapMilliseconds);
+
+                std::chrono::nanoseconds overallTimeNanoseconds = std::chrono::nanoseconds(overallTimeMilliseconds * ONE_MILLION);
+                std::chrono::nanoseconds fastestLapNanoseconds = std::chrono::nanoseconds(fastestLapMilliseconds * ONE_MILLION);
+
+                Serial.print("overallTimeNano: ");
+                Serial.println((double)overallTimeNanoseconds.count());
+                Serial.print("fastestLapNano: ");
+                Serial.println((double)fastestLapNanoseconds.count());
+
+                for (int i = 0; i < 2; i++)
+                {
+                    // Display Place
+                    _display.writeDigitRaw(0, LETTER_P);
+                    _display.writeDigitRaw(1, BLANK);
+                    _display.writeDigitRaw(3, BLANK);
+                    _display.writeDigitNum(4, place);
+                    _display.drawColon(false);
+                    _display.writeDisplay();
+                    delay(LAP_COUNT_DISPLAY_DELAY_MS);
+
+                    // Display Overall Time
+                    _display.writeDigitNum(0, 0);
+                    _display.writeDigitRaw(1, LETTER_A);
+                    _display.writeDigitRaw(3, BLANK);
+                    _display.writeDigitRaw(4, BLANK);
+                    _display.drawColon(false);
+                    _display.writeDisplay();
+                    delay(LAP_COUNT_DISPLAY_DELAY_MS);
+                    DisplayTime(overallTimeNanoseconds);
+                    delay(LAP_COUNT_DISPLAY_DELAY_MS);
+
+                    // Display Fastest Lap
+                    _display.writeDigitRaw(0, LETTER_F);
+                    _display.writeDigitRaw(1, LETTER_L);
+                    _display.writeDigitRaw(3, BLANK);
+                    _display.writeDigitRaw(4, BLANK);
+                    _display.drawColon(false);
+                    _display.writeDisplay();
+                    delay(LAP_COUNT_DISPLAY_DELAY_MS);
+                    DisplayTime(fastestLapNanoseconds);
+                    delay(LAP_COUNT_DISPLAY_DELAY_MS);
+
+                    // Display Fastest Lap Number
+                    _display.writeDigitRaw(0, LETTER_F);
+                    _display.writeDigitRaw(1, LETTER_L);
+
+                    if (fastestLapNumber < 10)
+                    {
+                        _display.writeDigitRaw(3, BLANK);
+                        _display.writeDigitNum(4, fastestLapNumber);
+                    }
+                    else if (fastestLapNumber > 10 && fastestLapNumber < 100)
+                    {
+                        _display.writeDigitNum(3, fastestLapNumber / 10);
+                        _display.writeDigitNum(4, fastestLapNumber % 10);
+                    }
+                    else
+                    {
+                        // TODO
+                    }
+                    _display.writeDisplay();
+                    _display.drawColon(false);
+                    _display.writeDisplay();
+                    delay(LAP_COUNT_DISPLAY_DELAY_MS);
+
+                    // Display Place
+                    _display.writeDigitRaw(0, LETTER_P);
+                    _display.writeDigitRaw(1, BLANK);
+                    _display.writeDigitRaw(3, BLANK);
+                    _display.writeDigitNum(4, place);
+                    _display.drawColon(false);
+                    _display.writeDisplay();
+                    delay(LAP_COUNT_DISPLAY_DELAY_MS);
+
+                    // reset
+                    _lapCount = 1;
+                    _millisecondsToRaceStartFromServer = -1;
+                    _raceHasStarted = false;
+                    _isFirstCarDetection = false;
+                    _timerState = REGISTERED;
+                }
+            }
+            else
+            {
+                _display.writeDigitRaw(0, BLANK);
+                _display.writeDigitRaw(1, BLANK);
+                _display.writeDigitRaw(3, BLANK);
+                _display.writeDigitRaw(4, BLANK);
+                _display.drawColon(true);
+                _display.writeDisplay();
+            }
         }
     }
 }
@@ -462,7 +629,7 @@ void DisplayLapTime(std::chrono::nanoseconds lapTime)
     }
 }
 
-void handleRace()
+void HandleRace()
 {
     long duration, distance;
     digitalWrite(TRIGGER_ADDRESS, LOW);
@@ -495,7 +662,17 @@ void handleRace()
                 _lapStart = std::chrono::high_resolution_clock::now();
                 _lapCount += 1;
                 DisplayLapTime(lapTime);
-                DisplayLapCount(_lapCount);
+
+                if (_lapCount > _numberOfLaps)
+                {
+                    _timerState = RACE_FINISH;
+                }
+                else
+                {
+                    DisplayLapCount(_lapCount);
+                }
+
+                PostLapTimeToServer(lapTime);
             }
         }
     }

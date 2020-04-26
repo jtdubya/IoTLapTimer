@@ -26,10 +26,11 @@
 //B01000000 middle bar
 
 // bit mask letters
-constexpr uint8_t LETTER_L = B00111000;
 constexpr uint8_t LETTER_A = B01110111;
-constexpr uint8_t LETTER_P = B01110011;
 constexpr uint8_t LETTER_C = B00111001;
+constexpr uint8_t LETTER_F = B01110001;
+constexpr uint8_t LETTER_L = B00111000;
+constexpr uint8_t LETTER_P = B01110011;
 constexpr uint8_t DASH = B01000000;
 constexpr uint8_t BLANK = B00000000;
 
@@ -43,14 +44,13 @@ constexpr int THIRD_OF_A_SECOND_MS = 333;
 constexpr int QUARTER_OF_A_SECOND_MS = 250;
 constexpr long MAX_THRESHOLD_DISTANCE = 45; // lower to prevent false detects from resetting the first car detection
 constexpr int64_t LAP_LOCKOUT_DURATION_NS = 2000000000;
-constexpr int64_t LAP_COUNT_DISPLAY_DELAY_MS = 1000;
+constexpr int64_t LAP_COUNT_DISPLAY_DELAY_MS = 1500;
 constexpr long ONE_MILLION = 1000000;
 
 constexpr NetworkConfiguration _netConfig = NetworkConfiguration();
 constexpr int QUICK_BLINK_DURATION = 150;
 constexpr int LONG_BLINK_DURATION = 750;
 constexpr int BLINK_INTERVAL = 250;
-constexpr size_t GET_RESPONSE_SIZE = 160;
 const String REGISTRATION_CLOSED = "Registration closed";
 
 enum TimerState
@@ -65,6 +65,7 @@ enum TimerState
 int _lapCount = 1;
 int _id;
 long _millisecondsToRaceStartFromServer = -1;
+int _numberOfLaps = 10;
 bool _raceHasStarted = false;
 bool _isFirstCarDetection = false;
 bool _ledOn;
@@ -74,7 +75,7 @@ IPAddress _ipAddress;
 std::chrono::high_resolution_clock::time_point _countdownStart, _lapStart, _lapEnd;
 Adafruit_7segment _display = Adafruit_7segment();
 
-struct GetResponse
+struct HttpResponse
 {
     int httpCode;
     String body; // only set if httpCode is non-negative
@@ -83,7 +84,7 @@ struct GetResponse
 struct JsonResponse
 {
     bool deserializationSuccess = false;
-    StaticJsonDocument<GET_RESPONSE_SIZE> document;
+    StaticJsonDocument<1028> document;
 };
 
 long GetDistanceCentimeters(long duration);
