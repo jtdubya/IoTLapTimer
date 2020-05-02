@@ -1,9 +1,10 @@
 #pragma once
 
 // Replace with actual values and change file type to .h
+
 struct NetworkConfiguration
 {
 	char* ssid = "ssid";
 	char* key = "password";
-	char* apiPrefix = "http://<url>/RaceTimer";
+    char* endpointBase = "http://<LapTimerServerIPAddressAndPort>/api/v1/RaceTimer";
 };
