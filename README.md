@@ -3,9 +3,10 @@ This is an IoT LapTimer that uses ultrasonic sensors and a numeric display and r
 
 The timer is built with the a low cost wifi board, ultrasonic sensor, and display. The IoT lap timer communicates with the [LapTimerServer](https://github.com/jtdubya/LapTimerServer) I wrote to conduct races with other lap timers.  
 
-<div align="center">
+<!-- Something's wrong with displaying images...
+ <div align="center">
   <img style='width: 500px' src="media/lap_timer_demo.gif"></img>
-</div>
+</div> -->
 
 ## Components:
 1. [ESP8226 board](https://www.amazon.com/gp/product/B010N1SPRK/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1)
@@ -24,7 +25,7 @@ Timing is really simple: the distance sensor is used to check for the passing sl
 Here's a state diagram for the lap timer:
 <div align="center">
   <img style='width: 550px' src="media/lap_timer_state_diagram.png"></img>
-</div>
+</div> -->
 
 ### Lap Timer State Behavior
 1. Not Registered
@@ -54,13 +55,13 @@ Once the race is finished the LED display will cycle through the following twice
 
 After the cycle is completed the place will be displayed until the next race starts. 
 
-## Setup
+<!-- ## Setup
 1. Connect the ESP8266, ultrasonic sensor, and display according to [wiring diagram](#Wiring-Diagram) below. You can use the mini bread boards like [these](https://www.microcenter.com/product/481840/velleman-170-tie-points-mini-breadboards---4-pack) to hold everything
 1. Update the [NetworkConfiguration.txt](./NetworkConfiguration.txt) file with your network configuration and change the file type to a header file (`NetworkConfiguration.h`)
-1. Open [IoTLapTimer.ino](./IoTLapTimer.ino) in Arduino IDE and upload the sketch to the ESP8226 board
+1. Open [IoTLapTimer.ino](./IoTLapTimer.ino) in Arduino IDE and upload the sketch to the ESP8226 board -->
 
-## Wiring Diagram
+<!-- ## Wiring Diagram
 
 <div align="center">
   <img style='width: 500px' src="media/wiring_diagram.png"></img>
-</div>
+</div> -->
