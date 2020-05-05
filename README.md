@@ -4,7 +4,7 @@ This is an IoT LapTimer that uses ultrasonic sensors and a numeric display and r
 The timer is built with the a low cost wifi board, ultrasonic sensor, and display. The IoT lap timer communicates with the [LapTimerServer](https://github.com/jtdubya/LapTimerServer) I wrote to conduct races with other lap timers.  
 
 <div align="center">
-  <img style='width: 500px' src="media/LapTimerDemo.gif"></img>
+  <img style='width: 500px' src="media/lap_timer_demo.gif"></img>
 </div>
 
 ## Components:
@@ -23,7 +23,7 @@ Timing is really simple: the distance sensor is used to check for the passing sl
 
 Here's a state diagram for the lap timer:
 <div align="center">
-  <img style='width: 550px' src="media/LapTimerStateDiagram.png"></img>
+  <img style='width: 550px' src="media/lap_timer_state_diagram.png"></img>
 </div>
 
 ### Lap Timer State Behavior
@@ -62,5 +62,5 @@ After the cycle is completed the place will be displayed until the next race sta
 ## Wiring Diagram
 
 <div align="center">
-  <img style='width: 500px' src="media/WiringDiagram.png"></img>
+  <img style='width: 500px' src="media/wiring_diagram.png"></img>
 </div>
