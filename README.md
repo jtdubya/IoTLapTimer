@@ -22,10 +22,10 @@ The timer is built with the a low cost wifi board, ultrasonic sensor, and displa
 ## How it works
 Timing is really simple: the distance sensor is used to check for the passing slot car. Lap times and counts are displayed at the end of each lap and sent to the lap timer server for storage. 
 
-Here's a state diagram for the lap timer:
+<!-- Here's a state diagram for the lap timer:
 <div align="center">
   <img style='width: 550px' src="media/lap_timer_state_diagram.png"></img>
-</div> -->
+</div>  -->
 
 ### Lap Timer State Behavior
 1. Not Registered
