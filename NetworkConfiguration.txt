@@ -6,5 +6,5 @@ struct NetworkConfiguration
 {
 	char* ssid = "ssid";
 	char* key = "password";
-    char* endpointBase = "http://<LapTimerServerIPAddressAndPort>/api/v1/RaceTimer";
+	char* endpointBase = "http://<LapTimerServerIPAddressAndPort>/api/v1/RaceTimer";
 };
